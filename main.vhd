@@ -34,7 +34,7 @@ use IEEE.STD_LOGIC_1164.ALL;
 entity main is
 Port (  main_reset : in STD_LOGIC;
         main_clk : in STD_LOGIC;
-        led : out STD_LOGIC;
+--        led : out STD_LOGIC;
         halt : out STD_LOGIC;
         GP_ROUT0 : out STD_LOGIC_VECTOR (6 downto 0)
 --        GP_ROUT1 : out STD_LOGIC_VECTOR (6 downto 0)
@@ -70,12 +70,12 @@ architecture Behavioral of main is
 
 begin
 
-    clk_prescaler0: scale_clock
-        port map (
-            reset => main_reset,
-            clk_in => main_clk,
-            clk_out => clk_1_HZ
-        );
+--    clk_prescaler0: scale_clock
+--        port map (
+--            reset => main_reset,
+--            clk_in => main_clk,
+--            clk_out => clk_1_HZ
+--        );
 
     seg0: bcd_7seg_decoder 
         port map (
@@ -86,7 +86,7 @@ begin
     control_unit: CU
         port map (
             reset => main_reset,
-            clk => clk_1_HZ,
+            clk => main_clk,
             halt => halt,    
             ROUT0 => internal_rout0
 --            rout1 => GP_ROUT1
@@ -96,5 +96,5 @@ begin
 --    begin  -- process gen_clk
 --    end process reset_process;
         
-     led <= clk_1_HZ;   
+--     led <= clk_1_HZ;   
 end Behavioral;
