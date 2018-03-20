@@ -1,0 +1,9 @@
+add_llvm_library(LLVMLaserDesc
+  LaserMCAsmInfo.cpp
+  LaserAsmBackend.cpp
+  LaserMCCodeEmitter.cpp
+  LaserMCExpr.cpp
+  LaserELFObjectWriter.cpp
+  LaserTargetStreamer.cpp
+  LaserMCTargetDesc.cpp
+  )
