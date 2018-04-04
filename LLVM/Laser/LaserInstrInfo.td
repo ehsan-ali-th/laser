@@ -20,8 +20,8 @@ include "LaserInstrFormats.td"
 // Instruction operand types
 
 def LaserMemAsmOperand : AsmOperandClass {
-  let Name = "Mem";
-  let ParserMethod = "parseMemOperand";
+  let Name = "Mem16";
+  let ParserMethod = "parseMem16Operand";
 }
 
 def LaserImmAsmOperand : AsmOperandClass {
@@ -50,6 +50,7 @@ def LASERimm16 : Operand<i16> {
 
 def LASERjmptarget11AsmOperand : AsmOperandClass {
   let Name = "LASERjmptarget11";
+  let ParserMethod = "parseLASERjmptarget11Operand"; // TODO: implment this in LaserAsmParser.cpp
 }
 
 
@@ -162,12 +163,20 @@ def LASERDivRem : SDNode<"LASERISD::DivRem", SDT_LaserDivRem, [SDNPOutGlue]>;
 // }
 
 // Addressing modes.
+// def addr : ComplexPattern<
+//                 iPTR,                // ValueType ty
+//                 2,                   // int numops
+//                 "SelectAddr",        // string fn
+//                 [frameindex],        // list<SDNode> roots = []
+//                 [SDNPWantParent]     // list<SDNodeProperty> props = []
+//                 >;
+
 def addr : ComplexPattern<
                 iPTR,                // ValueType ty
                 2,                   // int numops
                 "SelectAddr",        // string fn
                 [frameindex],        // list<SDNode> roots = []
-                [SDNPWantParent]     // list<SDNodeProperty> props = []
+                [SDNPWantParent]                   // list<SDNodeProperty> props = []
                 >;
 
 def SDTLaserWrapper : SDTypeProfile<1, 1, [SDTCisPtrTy<0>,
@@ -256,6 +265,7 @@ def LD : F2 <0b01111, (outs GNPRegs:$rd), (ins memsrc:$rs),
 
 // Store: The value inside register RS will be put into memory address 
 //  saved in register (SP+RD).
+// The order of ins argumetn does matter.
 def ST : F2 <0b10000, (outs), (ins GNPRegs:$rs, memsrc:$rd), 
 "st $rd, $rs", [(store i16:$rs, addr:$rd)], IIStore>; 
 

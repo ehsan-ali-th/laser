@@ -164,8 +164,11 @@ storeRegToStack(MachineBasicBlock &MBB, MachineBasicBlock::iterator I,
   // BuildMI(MBB, I, DL, get(ADD), SrcReg)
   //   .addReg(FrameReg).addReg(SrcReg);
 
-  BuildMI(MBB, I, DL, get(Opc)).addFrameIndex(FI).addMemOperand(MMO).addImm(Offset)
-    .addReg(SrcReg, getKillRegState(isKill));
+  BuildMI(MBB, I, DL, get(Opc))
+    .addReg(SrcReg, getKillRegState(isKill))
+    .addFrameIndex(FI)
+    .addMemOperand(MMO)
+    .addImm(Offset);
 }
 
 void LaserInstrInfo::
@@ -173,14 +176,14 @@ loadRegFromStack(MachineBasicBlock &MBB, MachineBasicBlock::iterator I,
 		 unsigned DestReg, int FI, const TargetRegisterClass *RC,
 		 const TargetRegisterInfo *TRI, int64_t Offset) const {
 
-  unsigned IMD = LASER::IMD;
+  // unsigned IMD = LASER::IMD;
   unsigned Opc = LASER::LD;
 
   DebugLoc DL;
   if (I != MBB.end()) DL = I->getDebugLoc();
   MachineMemOperand *MMO = GetMemOperand(MBB, FI, MachineMemOperand::MOLoad);
 
-  BuildMI(MBB, I, DL, get(IMD), DestReg).addImm(Offset);
+  //  BuildMI(MBB, I, DL, get(IMD), DestReg).addImm(Offset);
 
   BuildMI(MBB, I, DL, get(Opc), DestReg).addFrameIndex(FI).addImm(Offset)
     .addMemOperand(MMO);

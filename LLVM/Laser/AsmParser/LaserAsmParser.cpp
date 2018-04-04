@@ -83,8 +83,9 @@ class LaserAsmParser : public MCTargetAsmParser {
 
   bool ParseDirective(AsmToken DirectiveID) override;
 
-  OperandMatchResultTy parseMemOperand(OperandVector &Operands);
+  OperandMatchResultTy parseMem16Operand(OperandVector &Operands);
   OperandMatchResultTy parseImmOperand(OperandVector &Operands);
+  OperandMatchResultTy parseLASERjmptarget11Operand(OperandVector &Operands);
 
   bool ParseOperand(OperandVector &Operands, StringRef Mnemonic);
 
@@ -150,7 +151,8 @@ private:
   // Here we define the operand kinds
   enum KindTy {
     k_Immediate,
-    k_Memory,
+    k_Memory16,
+    k_Memory11,
     k_Register,
     k_Token
   } Kind;
@@ -167,16 +169,24 @@ private:
   struct ImmOp {
     const MCExpr *Val;
   };
-  struct MemOp {
+
+  struct MemOp16 {
     unsigned Base;
     const MCExpr *Off;
   };
+
+  struct MemOp11 {
+    unsigned Base;
+    const MCExpr *Off;
+  };
+
 
   union {
     struct Token Tok;
     struct PhysRegOp Reg;
     struct ImmOp Imm;
-    struct MemOp Mem;
+    struct MemOp16 Mem16;
+    struct MemOp11 Mem11;
   };
 
 public:
@@ -187,7 +197,9 @@ public:
     case k_Token:     OS << "Token: " << getToken() << "\n"; break;
     case k_Register:  OS << "Reg No. = " << getReg() << "\n"; break;
     case k_Immediate: OS << "Imm: #" << getImm() << "\n"; break;
-    case k_Memory: OS << "Mem: " << getMemBase() << "+"
+    case k_Memory16: OS << "Mem16: " << getMemBase16() << "+"
+		      <<  "\n"; break;
+    case k_Memory11: OS << "Mem11: " << getMemBase11() << "+"
 		      <<  "\n"; break;
     }
   }
@@ -216,12 +228,21 @@ public:
     addExpr(Inst,Expr);
   }
 
-  void addMemOperands(MCInst &Inst, unsigned N) const {
+  void addMem16Operands(MCInst &Inst, unsigned N) const {
     assert(N == 2 && "Invalid number of operands!");
 
-    Inst.addOperand(MCOperand::createReg(getMemBase()));
+    Inst.addOperand(MCOperand::createReg(getMemBase16()));
 
-    const MCExpr *Expr = getMemOff();
+    const MCExpr *Expr = getMemOff16();
+    addExpr(Inst,Expr);
+  }
+
+  void addMem11Operands(MCInst &Inst, unsigned N) const {
+    assert(N == 2 && "Invalid number of operands!");
+
+    Inst.addOperand(MCOperand::createReg(getMemBase11()));
+
+    const MCExpr *Expr = getMemOff11();
     addExpr(Inst,Expr);
   }
 
@@ -239,11 +260,16 @@ public:
   
 
 
-  bool isReg() const { return Kind == k_Register; }
-  bool isImm() const { return Kind == k_Immediate; }
+  bool isReg() const override { return Kind == k_Register; }
+  bool isImm() const override { return Kind == k_Immediate; }
+  bool isMem() const override {
+    return isMem16() || isMem11();
+  }
+
   bool isLaserImm() const { return Kind == k_Immediate; }
   bool isToken() const { return Kind == k_Token; }
-  bool isMem() const { return Kind == k_Memory; }
+  bool isMem16() const { return Kind == k_Memory16; }
+  bool isMem11() const { return Kind == k_Memory11; }
   bool isLASERjmptarget11() const { return isImm() || isToken(); }
 
 
@@ -263,14 +289,24 @@ public:
     return Imm.Val;
   }
 
-  unsigned getMemBase() const {
-    assert((Kind == k_Memory) && "Invalid access!");
-    return Mem.Base;
+  unsigned getMemBase16() const {
+    assert((Kind == k_Memory16) && "Invalid access!");
+    return Mem16.Base;
   }
 
-  const MCExpr *getMemOff() const {
-    assert((Kind == k_Memory) && "Invalid access!");
-    return Mem.Off;
+  unsigned getMemBase11() const {
+    assert((Kind == k_Memory11) && "Invalid access!");
+    return Mem11.Base;
+  }
+
+  const MCExpr *getMemOff16() const {
+    assert((Kind == k_Memory16) && "Invalid access!");
+    return Mem16.Off;
+  }
+
+  const MCExpr *getMemOff11() const {
+    assert((Kind == k_Memory16) && "Invalid access!");
+    return Mem16.Off;
   }
 
   static std::unique_ptr<LaserOperand> CreateToken(StringRef Str, SMLoc S) {
@@ -300,11 +336,21 @@ public:
     return Op;
   }
 
-  static std::unique_ptr<LaserOperand> CreateMem(unsigned Base, const MCExpr *Off,
+  static std::unique_ptr<LaserOperand> CreateMem16(unsigned Base, const MCExpr *Off,
                                  SMLoc S, SMLoc E) {
-    auto Op = make_unique<LaserOperand>(k_Memory);
-    Op->Mem.Base = Base;
-    Op->Mem.Off = Off;
+    auto Op = make_unique<LaserOperand>(k_Memory16);
+    Op->Mem16.Base = Base;
+    Op->Mem16.Off = Off;
+    Op->StartLoc = S;
+    Op->EndLoc = E;
+    return Op;
+  }
+
+  static std::unique_ptr<LaserOperand> CreateMem11(unsigned Base, const MCExpr *Off,
+                                 SMLoc S, SMLoc E) {
+    auto Op = make_unique<LaserOperand>(k_Memory11);
+    Op->Mem11.Base = Base;
+    Op->Mem11.Off = Off;
     Op->StartLoc = S;
     Op->EndLoc = E;
     return Op;
@@ -772,7 +818,7 @@ OperandMatchResultTy LaserAsmParser::parseImmOperand(
 
 // eg, [%r9]
 OperandMatchResultTy 
-LaserAsmParser::parseMemOperand(OperandVector &Operands) {
+LaserAsmParser::parseMem16Operand(OperandVector &Operands) {
   const MCExpr *IdVal = 0;
 
   SMLoc Start = Parser.getTok().getLoc(); // start location of the operand
@@ -829,7 +875,7 @@ LaserAsmParser::parseMemOperand(OperandVector &Operands) {
   Parser.Lex(); // Eat ']' token.
 
   SMLoc End = SMLoc::getFromPointer(Parser.getTok().getLoc().getPointer());
-  Operands.push_back(LaserOperand::CreateMem(RegNo, IdVal, Start, End));
+  Operands.push_back(LaserOperand::CreateMem16(RegNo, IdVal, Start, End));
 
   // // Replace the register operand with the memory operand.
   // std::unique_ptr<LaserOperand> op(
@@ -841,6 +887,79 @@ LaserAsmParser::parseMemOperand(OperandVector &Operands) {
   // Operands.push_back(LaserOperand::CreateMem(RegNo, IdVal, Start, End));
   return MatchOperand_Success;
 }
+
+// eg, [@BB1_1]
+OperandMatchResultTy 
+LaserAsmParser::parseLASERjmptarget11Operand(OperandVector &Operands) {
+  const MCExpr *IdVal = 0;
+
+  SMLoc Start = Parser.getTok().getLoc(); // start location of the operand
+  int RegNo = -1;
+
+  const AsmToken &Tok = Parser.getTok(); // get next token
+  if (Tok.isNot(AsmToken::LBrac)) {
+    Error(Parser.getTok().getLoc(), "'[' expected");
+    return MatchOperand_ParseFail;
+  }
+
+  Parser.Lex(); // Eat '[' token.
+
+  const AsmToken &Tok1 = Parser.getTok(); // get next token
+  if (Tok1.is(AsmToken::Percent)) {
+    Parser.Lex(); // Eat '%' token.
+
+    // SMLoc S = Parser.getTok().getLoc();
+
+    //RegNo = tryParseRegister(Mnemonic);
+
+    const AsmToken &Tok = Parser.getTok();
+
+    if (Tok.is(AsmToken::Identifier)) {
+      std::string lowerCase = Tok.getString().lower();
+      RegNo = matchRegisterName(lowerCase);
+    } 
+    // else if (Tok.is(AsmToken::Integer))
+    //   RegNo = matchRegisterByNumber(static_cast<unsigned>(Tok.getIntVal()),
+    // 				     Mnemonic.lower());
+
+    if (RegNo == -1)
+      return MatchOperand_ParseFail;
+
+    Parser.Lex(); // Eat register token.
+
+    // if (!tryParseRegisterOperand(Operands, Mnemonic)) {
+    //   Start = Parser.getTok().getLoc();
+    // }
+    // else {
+    //   Error(Parser.getTok().getLoc(), "unexpected token in operand");
+    //   return MatchOperand_ParseFail;
+    // }
+  }
+  else 
+    return MatchOperand_ParseFail;
+
+  const AsmToken &Tok2 = Parser.getTok(); // get next token
+  if (Tok2.isNot(AsmToken::RBrac)) {
+    Error(Parser.getTok().getLoc(), "']' expected");
+    return MatchOperand_ParseFail;
+  }
+
+  Parser.Lex(); // Eat ']' token.
+
+  SMLoc End = SMLoc::getFromPointer(Parser.getTok().getLoc().getPointer());
+  Operands.push_back(LaserOperand::CreateMem11(RegNo, IdVal, Start, End));
+
+  // // Replace the register operand with the memory operand.
+  // std::unique_ptr<LaserOperand> op(
+  //     static_cast<LaserOperand *>(Operands.back().release()));
+  // int RegNo = op->getReg();
+  // // remove register from operands
+  // Operands.pop_back();
+  // // and add memory operand
+  // Operands.push_back(LaserOperand::CreateMem(RegNo, IdVal, Start, End));
+  return MatchOperand_Success;
+}
+
 
 bool LaserAsmParser::
 parseMathOperation(StringRef Name, SMLoc NameLoc,
