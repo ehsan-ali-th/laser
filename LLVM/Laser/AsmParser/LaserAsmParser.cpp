@@ -975,6 +975,13 @@ bool LaserAsmParser::ParseDirective(AsmToken DirectiveID) {
     return false;
   }
 
+  if (DirectiveID.getString() == ".size") {
+    // ignore this directive for now
+    Parser.eatToEndOfStatement();
+    return false;
+  }
+
+
   return true;
 }
 
