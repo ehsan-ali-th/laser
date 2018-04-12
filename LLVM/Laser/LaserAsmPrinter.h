@@ -64,7 +64,7 @@ namespace llvm {
 
     void printSavedRegsBitmask(raw_ostream &O);
     void printHex32(unsigned Value, raw_ostream &O);
-    void emitFrameDirective();
+    // void emitFrameDirective();
     const char *getCurrentABIString() const;
     void EmitFunctionEntryLabel() override;
     void EmitFunctionBodyStart() override;

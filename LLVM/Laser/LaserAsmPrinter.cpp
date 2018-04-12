@@ -102,27 +102,6 @@ void LaserAsmPrinter::printHex32(unsigned Value, raw_ostream &O) {
 }
 
 
-void LaserAsmPrinter::emitFrameDirective() {
-  const TargetRegisterInfo &RI = *MF->getSubtarget().getRegisterInfo();
-  unsigned stackReg = RI.getFrameRegister(*MF);
-  unsigned returnReg = RI.getRARegister();
-  unsigned stackSize = MF->getFrameInfo().getStackSize();
-  if (OutStreamer->hasRawTextSupport())
-    OutStreamer->EmitRawText("\t.frame\t$" +
-			     StringRef(LaserInstPrinter::getRegisterName(stackReg)).lower() +
-			     "," + Twine(stackSize) + ",$" +
-			     StringRef(LaserInstPrinter::getRegisterName(returnReg)).lower()
-			     );
-}
-/// Emit Set directives.
-// const char *LaserAsmPrinter::getCurrentABIString() const {
-//   switch (static_cast<LaserTargetMachine &>(TM).getABI().GetEnumValue()) {
-//   case LaserABIInfo::ABI::O32: return "abiO32";
-//   case LaserABIInfo::ABI::S32: return "abiS32";
-//   default: llvm_unreachable("Unknown Laser ABI");
-//   }
-// }
-
 void LaserAsmPrinter::EmitFunctionEntryLabel() {
   if (OutStreamer->hasRawTextSupport())
     OutStreamer->EmitRawText("\t.ent\t" + Twine(CurrentFnSym->getName()));
@@ -136,7 +115,6 @@ void LaserAsmPrinter::EmitFunctionEntryLabel() {
 /// the first basic block in the function.
 void LaserAsmPrinter::EmitFunctionBodyStart() {
   MCInstLowering.Initialize(&MF->getContext());
-  emitFrameDirective();
   if (OutStreamer->hasRawTextSupport()) {
     SmallString<128> Str;
     raw_svector_ostream OS(Str);
