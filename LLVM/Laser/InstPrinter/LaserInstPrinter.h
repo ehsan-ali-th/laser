@@ -47,7 +47,7 @@ public:
   void printAddrModeMemSrc(const MCInst *MI, unsigned OpNo, 
 			   const MCSubtargetInfo &STI, raw_ostream &O);
 
-  void printJumpTarget(const MCInst *MI, unsigned OpNo, const MCSubtargetInfo &STI, raw_ostream &O);
+  void printjmptarget11(const MCInst *MI, unsigned OpNo, const MCSubtargetInfo &STI, raw_ostream &O);
 
 
 };

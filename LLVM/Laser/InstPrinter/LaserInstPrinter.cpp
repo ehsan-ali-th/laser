@@ -89,10 +89,12 @@ void LaserInstPrinter::printAddrModeMemSrc(const MCInst *MI, unsigned OpNo, cons
 }
 
 // Print a 'LASERimm11op' operand which is a [#BB].
-// void LaserInstPrinter::printJumpTarget(const MCInst *MI, unsigned OpNo, const MCSubtargetInfo &STI, raw_ostream &O) {
-//   O << "[";
-//   printOperand(MI, OpNo, STI, O);
-//   O << "]";  
-// }
+void LaserInstPrinter::printjmptarget11(const MCInst *MI, unsigned OpNo, const MCSubtargetInfo &STI, raw_ostream &O) {
+  const MCOperand &Op = MI->getOperand(OpNo);
+  O << "@jmp11[";
+  // printOperand(MI, OpNo, STI, O);
+  Op.getExpr()->print(O, &MAI);
+  O << "]";  
+}
 
 

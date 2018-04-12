@@ -41,7 +41,7 @@ def uimm16      : Operand<i16> {
 // }]>;
 // }
 
-def LASERimm16 : Operand<i16> {
+def LASERimm16 : Operand<i16> { 
     let ParserMatchClass = LaserImmAsmOperand;
     let PrintMethod = "printImm"; 
     //let EncoderMethod = "getImmSrcValue";
@@ -50,12 +50,13 @@ def LASERimm16 : Operand<i16> {
 
 def LASERjmptarget11AsmOperand : AsmOperandClass {
   let Name = "LASERjmptarget11";
-  let ParserMethod = "parseLASERjmptarget11Operand"; // TODO: implment this in LaserAsmParser.cpp
+  let ParserMethod = "parseLASERjmptarget11Operand"; 
 }
 
 
 def LASERjmptarget11 : Operand<OtherVT> {
     let ParserMatchClass = LASERjmptarget11AsmOperand;
+    let PrintMethod = "printjmptarget11"; 
     let EncoderMethod = "getJumpTarget11OpValue";
     let OperandType = "OPERAND_PCREL";
  }
@@ -442,7 +443,7 @@ def RET2: F4 <0b11101, (outs), (ins),
 "ret", [], IIBranch>; 
 
 def JMP : FJ <0b10010, (outs), (ins LASERjmptarget11:$address),
-"jmp [$address]", [(br bb:$address)], IIBranch> {
+"jmp $address", [(br bb:$address)], IIBranch> {
 let isBranch = 1;          
 let isTerminator = 1;   
 let isBarrier = 1;

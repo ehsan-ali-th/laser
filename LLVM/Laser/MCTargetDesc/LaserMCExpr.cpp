@@ -43,17 +43,25 @@ void LaserMCExpr::printImpl(raw_ostream &OS, const MCAsmInfo *MAI) const {
     OS << "@call16";
     break;
   case VK_LASER_PC11:
-    OS << "@jmp11";
+    // OS << "@jmp11";
     break;
   case VK_LASER_GV16:
     OS << "@gv16";
     break;
   }
 
-  OS << '[';
-  const MCExpr *Expr = getSubExpr();
-  Expr->print(OS, MAI);
-  OS << ']';
+
+  if (Kind == VK_LASER_PC11) {
+    const MCExpr *Expr = getSubExpr();
+    OS << '@';
+    Expr->print(OS, MAI);
+  }
+  else {
+    OS << '[';
+    const MCExpr *Expr = getSubExpr();
+    Expr->print(OS, MAI);
+    OS << ']';
+  }
 }
 
 

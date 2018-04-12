@@ -201,11 +201,15 @@ unsigned LaserMCCodeEmitter::getJumpTarget11OpValue(const MCInst &MI, unsigned O
   assert(MO.isExpr() && "getJumpTargetOpValue expects only expressions");
 
   const MCExpr *Expr = MO.getExpr();
+  
+  Laser::Fixups FixupKind = Laser::fixup_Laser_PC11;
+
   if (Opcode == LASER::JMP)
     Fixups.push_back(MCFixup::create(0, Expr,
-                                     MCFixupKind(Laser::fixup_Laser_PC11)));
+				     MCFixupKind(FixupKind)));
   else
     llvm_unreachable("unexpect opcode in getJumpAbsoluteTargetOpValue()");
+
   return 0;
 }
 
