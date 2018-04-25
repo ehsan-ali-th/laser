@@ -147,7 +147,7 @@ bool LaserAsmBackend::writeNopData(uint64_t Count, MCObjectWriter *OW) const {
     return false;
 
   for (uint64_t i = 0; i < Count; i += 2)
-    OW->write16(0xF000); // 0xF000 = NOP instruction
+    OW->write16(0xF800); // 0xF800 = NOP instruction
 
   return true;
 }

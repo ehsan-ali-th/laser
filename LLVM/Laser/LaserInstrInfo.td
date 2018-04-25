@@ -304,12 +304,22 @@ let Uses = [FLAGR];
 def INC : F3 <0b00101,  (outs GNPRegs:$rt_out), (ins GNPRegs:$rt), 
 "inc $rt", [(set i16:$rt_out, (add i16:$rt, 1))], IIAlu> {
       let Constraints = "$rt_out = $rt";
+      let DecoderMethod = "DecodeINC";
 }
 
 def DEC : F3 <0b00110,  (outs GNPRegs:$rt_out), (ins GNPRegs:$rt), 
 "dec $rt", [(set i16:$rt_out, (sub i16:$rt, 1))], IIAlu> {
       let Constraints = "$rt_out = $rt";
+      let DecoderMethod = "DecodeINC";
 }
+
+// def INC : F3 <0b00101,  (outs), (ins GNPRegs:$rd), 
+// "inc $rd", [(set i16:$rd, (add i16:$rd, 1))], IIAlu> {
+// }
+
+// def DEC : F3 <0b00110,  (outs), (ins GNPRegs:$rd), 
+// "dec $rd", [(set i16:$rd, (sub i16:$rd, 1))], IIAlu> {
+// }
 
 def AND : F1 <0b01001,  (outs RTRegs:$rt), (ins GNPRegs:$rs, GNPRegs:$rd), 
 "and $rd, $rs, $rt", [(set i16:$rt, (and i16:$rs, i16:$rd))], IIAlu>; 
@@ -329,6 +339,8 @@ def SRL : F2 <0b01101,  (outs GNPRegs:$rd), (ins GNPRegs:$rs),
 def SLL : F2 <0b01110,  (outs GNPRegs:$rd), (ins GNPRegs:$rs), 
 "sll $rd, $rs", [], IIAlu>; 
 
+def NOP : F4 <0b11111,  (outs), (ins), "nop", [], IIAlu>; 
+
 // def SRL : F1 <0b01101,  (outs GNPRegs:$rd), (ins GNPRegs:$rs), 
 // "srl $rd, $rs", [(set i16:$rd, (srl i16:$rs))], IIAlu>; 
 
@@ -346,11 +358,9 @@ def IN : F2 <0b11000,  (outs GNPRegs:$rd), (ins GNPRegs:$rs),
 def OUT : F2 <0b11001,  (outs GNPRegs:$rs), (ins GNPRegs:$rd), 
 "out $rd, $rs", [], IIStore>; 
 
-def CLRC : F4 <0b10101, (outs), (ins), 
-"clrc", [], IIAlu>; 
+def CLRC : F4 <0b10101, (outs), (ins), "clrc", [], IIAlu>; 
 
-def SETC : F4 <0b10110, (outs), (ins), 
-"setc", [], IIAlu>; 
+def SETC : F4 <0b10110, (outs), (ins), "setc", [], IIAlu>; 
 
 // def : Pat <(brcc SETNE, (i16 GNPRegs:$rs), (i16 GNPRegs:$rd), (bb:$T) ),
 // (ADD $rs, $rd)

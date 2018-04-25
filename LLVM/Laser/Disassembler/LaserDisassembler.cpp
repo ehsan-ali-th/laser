@@ -123,6 +123,9 @@ static DecodeStatus DecodeLASERmemsrc(MCInst &Inst,
   return MCDisassembler::Success;
 }
 
+static DecodeStatus DecodeINC(MCInst &Inst, unsigned insn, uint64_t Address, const void *Decoder);
+
+
 
 static MCDisassembler *createLaserDisassembler(
                        const Target &T,
@@ -138,6 +141,21 @@ extern "C" void LLVMInitializeLaserDisassembler() {
 }
 
 #include "LaserGenDisassemblerTables.inc"
+
+static DecodeStatus DecodeINC(MCInst &Inst, unsigned insn, uint64_t Address, const void *Decoder) {
+
+  unsigned rd = fieldFromInstruction(insn, 10, 7);
+  
+  // Decode rd
+  DecodeStatus status = DecodeGNPRegsRegisterClass(Inst, rd, Address, Decoder);
+  if (status != MCDisassembler::Success)
+    return status;
+
+  Inst.addOperand(MCOperand::createReg(GNPRegsTable[rd]));
+
+  return MCDisassembler::Success;
+}
+
 
 /// Read two bytes from the ArrayRef and return 16 bit word sorted
 /// according to the given endianess
